@@ -1,0 +1,136 @@
+
+Q1: 	What is the distribution of order values across all customers in the dataset?  
+SELECT
+	customerid,
+	stockcode,
+	description,
+	quantity,
+	unitprice,
+	ROUND(CAST((quantity * unitprice) AS DECIMAL), 2) AS ordervalue
+FROM
+	retail;
+
+WITH
+	details AS (
+		SELECT
+	customerid,
+	stockcode,
+	description,
+	quantity,
+	unitprice,
+	ROUND(CAST((quantity * unitprice) AS DECIMAL), 2) AS ordervalue
+FROM
+	retail
+WHERE
+	ROUND(CAST((quantity * unitprice) AS DECIMAL), 2) > 0 AND customerid IS NOT NULL
+),
+	
+class_ AS (
+	SELECT
+		*,
+		CASE
+			WHEN ordervalue BETWEEN 0 AND 500 THEN 'a. 0 - 500'
+			WHEN ordervalue BETWEEN 501 AND 5000 THEN 'b. 501 - 5k'
+			WHEN ordervalue BETWEEN 5001 AND 100000 THEN 'c. 5001 - 100k'
+			ELSE 'd. above 100k'
+		END AS orderclass
+	FROM
+		Details
+)
+
+SELECT
+	orderclass,
+	COUNT(*) no_of_orders
+FROM
+	class_
+GROUP BY
+	1
+ORDER BY
+	1;
+
+
+Q2: 	How many unique products has each customer purchased? 
+
+WITH 
+	sold AS(
+		SELECT
+		COUNT(DISTINCT stockcode) AS uni_prod_sold, customerid
+	FROM
+		retail
+	GROUP BY
+		customerid
+	)
+SELECT
+	*
+FROM
+	sold
+GROUP BY
+	customerid,
+	uni_prod_sold;
+
+
+Q3: 	Which customers have only made a single purchase from the company? 
+
+WITH
+	purchase AS (
+		SELECT 
+	    customerid, COUNT(invoiceno) AS purchase_count
+	FROM 
+	    retail
+	GROUP BY 
+	    customerid
+	HAVING 
+	    COUNT(invoiceno) = 1 AND customerid IS NOT NULL
+	ORDER BY
+			COUNT(invoiceno) DESC
+	)
+SELECT
+	*
+FROM
+	purchase;
+
+
+Q4: 	Which products are most commonly purchased together by customers in the dataset? 
+
+---Step 1: Create pairs of products within the same purchase
+SELECT 
+        a.stockcode AS product1,
+        b.stockcode AS product2
+    FROM 
+        retail a
+    JOIN 
+        retail b 
+    ON 
+        a.invoiceno = b.invoiceno
+    WHERE 
+        a.stockcode < b.stockcode;
+
+-- Step 2: Putting the created pairs of products in a CTE
+
+WITH common_products AS (
+    SELECT 
+        a.stockcode AS product1,
+        b.stockcode AS product2
+    FROM 
+        retail a
+    JOIN 
+        retail b 
+    ON 
+        a.invoiceno = b.invoiceno
+    WHERE 
+        a.stockcode < b.stockcode
+)
+
+-- Step 3: Count the occurrences of each product pair
+	
+SELECT 
+    product1, 
+    product2, 
+    COUNT(*) AS product_count
+FROM 
+    common_products
+GROUP BY 
+    product1, 
+    product2
+ORDER BY 
+	 product_count DESC;
