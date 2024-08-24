@@ -27,7 +27,7 @@ The Retail Dataset provides a view of customers’ transactions, allowing for in
 - Postgresql - Data Cleaning and Analysis
 
 
-## Data Cleaning & Preparation
+## Data Cleaning and Preparation
 The data preparation phase comprises of the following tasks:
 
 - Data loading and inspection
